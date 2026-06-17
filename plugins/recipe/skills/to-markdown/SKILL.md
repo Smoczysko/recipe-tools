@@ -16,24 +16,65 @@ aniagotuje.pl — the parsing of section headings below is specific to it.
 
 ## Steps
 
-1. **Fetch the page.** Use the `WebFetch` tool on the recipe URL. Ask it to return,
-   verbatim and in full (NOT summarized):
-   - the recipe title
-   - every ingredient line, including the name/label of each ingredient group if the
-     recipe splits ingredients into groups (e.g. "Ciasto", "Nadzienie")
-   - the complete text of every preparation step
-   - metadata: prep time, cook time, number of servings
-   - flag any blocks labeled `Porada` so they can be dropped
+1. **Fetch the RAW HTML — do NOT use `WebFetch`.** `WebFetch` runs the page through a
+   summarizing helper model that silently paraphrases and shortens the recipe steps; its
+   output is NOT verbatim and must never be used for this skill. Instead download the raw
+   HTML with `curl` via the Bash tool:
 
-2. **Map the Polish sections.** aniagotuje.pl uses these headings consistently:
-   - `Składniki` → ingredients
-   - `Sposób przygotowania` → preparation steps
-   - Metadata labels: `Czas przygotowania:` (prep time), `Czas smażenia:` /
-     `Czas pieczenia:` / `Czas gotowania:` (cook time), `Liczba porcji:` (servings)
+   ```bash
+   curl -sL -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36" "<url>" -o /tmp/recipe.html
+   ```
 
-   Keep the recipe content in its original language (Polish) unless the user asks for
-   a translation. Do not invent or "improve" quantities or steps — transcribe what
-   the page says.
+2. **Extract the recipe text deterministically.** The whole recipe lives in the element
+   `itemprop="recipeInstructions" class="article-content-body"`. Step text is plain text
+   and `<p>` paragraphs interleaved with `<img>` placeholders, `<br>`, and ad `<div>`s, so
+   strip the markup to plain text. Run this with Bash and read the output:
+
+   ```bash
+   python3 - <<'PY'
+   import re, html
+   h = open('/tmp/recipe.html', encoding='utf-8').read()
+   s = h.find('class="article-content-body"'); s = h.find('>', s) + 1
+   e = len(h)
+   for m in ['Polecane przepisy','class="article-tags','id="comments','class="comments','<footer','Zobacz podobne','class="related']:
+       j = h.find(m, s)
+       if j > 0: e = min(e, j)
+   b = h[s:e]
+   b = re.sub(r'<div[^>]*class="img-placeholder".*?</div>\s*</div>', ' ', b, flags=re.S)
+   b = re.sub(r'<div[^>]*class="ads-slot-article".*?</div>\s*</div>', ' ', b, flags=re.S)
+   b = re.sub(r'<(script|style|ins)\b.*?</\1>', ' ', b, flags=re.S)
+   b = re.sub(r'<span class="nutrition-info".*?</span>\s*</p>', '</p>', b, flags=re.S)
+   b = re.sub(r'<br\s*/?>', '\n', b)
+   b = re.sub(r'</(p|div|h[1-6])>', '\n\n', b)
+   b = re.sub(r'<[^>]+>', '', b)
+   b = html.unescape(b).replace('\xa0', ' ').replace('#ads#', '')
+   b = re.sub(r'[ \t]+', ' ', b)
+   out, blank = [], False
+   for ln in (l.strip() for l in b.split('\n')):
+       if ln: out.append(ln); blank = False
+       elif not blank: out.append(''); blank = True
+   print('\n'.join(out).strip())
+   PY
+   ```
+
+   The output contains, in order: marketing intro prose, the metadata line
+   (`Czas przygotowania:`, `Czas pieczenia:`/`Czas smażenia:`/`Czas gotowania:`,
+   `Liczba porcji:`), nutrition, the `Składniki` list, more intro prose, then the
+   preparation steps (each step is a blank-line-separated block), then closing/serving
+   notes. Also grab the recipe **title** from the `<h1>` (`grep -oE '<h1[^>]*>[^<]*' /tmp/recipe.html`).
+
+3. **Assemble from the extracted text — copy step text VERBATIM.** Build the output from
+   this plain text. The preparation steps are the sequential imperative instruction blocks
+   (from the first "do this" paragraph through the final serving/storage paragraph). Copy
+   each step **character-for-character** — see the verbatim rule below. Drop the marketing
+   intro prose, nutrition block, the duplicated `Składniki` list inside the body (use it
+   only to cross-check ingredients), ratings, related recipes, and newsletter text.
+
+   Keep the recipe content in its original language (Polish) unless the user asks for a
+   translation. Do not invent or "improve" quantities or steps.
+
+   If `curl`/`python3` are unavailable or the page layout doesn't match, tell the user
+   rather than falling back to `WebFetch` (which would silently summarize).
 
 ## Content rules
 
@@ -74,9 +115,13 @@ These are the important transformations — follow them exactly:
 - **Metadata as headers, not bold labels.** Render each metadata field (source, times,
   servings) as its own `##` header with the value on the line below — do not use bold
   inline labels like `**Źródło:**`.
-- **Full step content, no summaries.** Transcribe the entire text of each step. Do not
-  shorten, paraphrase, or summarize. Omit any step *name/heading* — keep only the step's
-  body text.
+- **Steps must be VERBATIM — copy, never rewrite.** Reproduce each step's text exactly as
+  it appears in the extracted HTML: same words, same sentences, same order, same numbers
+  and units. Do NOT shorten, paraphrase, summarize, merge sentences, drop the author's
+  asides, or "clean up" phrasing. The only edits allowed inside a step are removing a
+  `Porada` callout and stripping a leading step *name/heading*. If you find yourself
+  rewording a sentence, stop — paste the original instead. (This skill previously failed
+  by summarizing steps; that is the one thing it must not do.)
 - **Drop `Porada` blocks.** Exclude anything labeled `Porada` (tip callouts), whether it
   is a standalone section or embedded inside a step.
 
