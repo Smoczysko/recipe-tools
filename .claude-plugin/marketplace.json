@@ -1,0 +1,14 @@
+{
+  "name": "recipe-tools",
+  "owner": {
+    "name": "Łukasz Rybka"
+  },
+  "description": "Tools for turning recipes into clean, copy-ready markdown.",
+  "plugins": [
+    {
+      "name": "recipe-to-markdown",
+      "source": "./plugins/recipe-to-markdown",
+      "description": "Parse an aniagotuje.pl recipe into a plain-text markdown file ready to paste into Google Drive."
+    }
+  ]
+}
