@@ -1,6 +1,6 @@
 ---
-name: recipe-to-markdown
-description: Parse a recipe from aniagotuje.pl into a clean, plain-text markdown file ready to paste into Google Drive (or Docs). Use when the user gives an aniagotuje.pl recipe URL and wants it saved or converted to markdown.
+name: to-markdown
+description: Parse a recipe from aniagotuje.pl into a clean, plain-text markdown file ready to paste into Google Drive (or Docs). Use when the user gives an aniagotuje.pl recipe URL and wants it saved or converted to markdown. Invoked as /recipe:to-markdown.
 ---
 
 # Recipe to Markdown

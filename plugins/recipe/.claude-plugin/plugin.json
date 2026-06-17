@@ -1,5 +1,5 @@
 {
-  "name": "recipe-to-markdown",
+  "name": "recipe",
   "version": "0.1.0",
   "description": "Parse an aniagotuje.pl recipe into a plain-text markdown file ready to paste into Google Drive.",
   "author": {

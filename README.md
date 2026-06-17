@@ -3,9 +3,9 @@
 A [Claude Code](https://claude.com/claude-code) plugin marketplace for turning recipes
 into clean, copy-ready markdown.
 
-It currently contains one plugin, **`recipe-to-markdown`**, which parses a recipe from
-[aniagotuje.pl](https://aniagotuje.pl) into a plain-text markdown file that pastes neatly
-into Google Drive / Google Docs.
+It currently contains one plugin, **`recipe`**, whose `to-markdown` skill parses a recipe
+from [aniagotuje.pl](https://aniagotuje.pl) into a plain-text markdown file that pastes
+neatly into Google Drive / Google Docs.
 
 ## What it does
 
@@ -29,7 +29,7 @@ In Claude Code:
 
 ```
 /plugin marketplace add Smoczysko/recipe-tools
-/plugin install recipe-to-markdown@recipe-tools
+/plugin install recipe@recipe-tools
 ```
 
 The first command registers this marketplace; the second installs the plugin from it.
@@ -42,19 +42,20 @@ To update after new changes are pushed:
 
 ## Use
 
-Three equivalent ways, once installed:
+Two equivalent ways, once installed:
 
 1. **Slash command (explicit):**
 
    ```
-   /recipe-to-markdown https://aniagotuje.pl/przepis/ciasto-jogurtowe
+   /recipe:to-markdown https://aniagotuje.pl/przepis/ciasto-jogurtowe
    ```
+
+   Plugin skills are namespaced as `/<plugin>:<skill>`, so the command is
+   `/recipe:to-markdown` (not a bare name).
 
 2. **Natural language (auto-triggers the skill):**
 
    > Convert this recipe to markdown: https://aniagotuje.pl/przepis/ciasto-jogurtowe
-
-3. **Skill, invoked by name:** `/recipe-to-markdown` then provide the URL.
 
 The result is written to a `<slug>.md` file in the current directory (e.g.
 `ciasto-jogurtowe.md`), ready to copy into Google Drive. See
@@ -65,16 +66,14 @@ The result is written to a `<slug>.md` file in the current directory (e.g.
 ```
 recipe-tools/
 ├── .claude-plugin/
-│   └── marketplace.json                     # marketplace catalog
+│   └── marketplace.json             # marketplace catalog
 └── plugins/
-    └── recipe-to-markdown/
+    └── recipe/                      # the "recipe" plugin
         ├── .claude-plugin/
-        │   └── plugin.json                  # plugin manifest
-        ├── commands/
-        │   └── recipe-to-markdown.md        # /recipe-to-markdown <URL> command
+        │   └── plugin.json          # plugin manifest
         └── skills/
-            └── recipe-to-markdown/
-                └── SKILL.md                 # parsing rules
+            └── to-markdown/         # the "to-markdown" skill → /recipe:to-markdown
+                └── SKILL.md         # parsing rules
 ```
 
 ## Note
