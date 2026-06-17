@@ -1,6 +1,6 @@
 ---
 name: to-markdown
-description: Parse a recipe from aniagotuje.pl into a clean, plain-text markdown file ready to paste into Google Drive (or Docs). Use when the user gives an aniagotuje.pl recipe URL and wants it saved or converted to markdown. Invoked as /recipe:to-markdown.
+description: Parse a recipe from aniagotuje.pl into a clean, plain-text markdown file ready to paste into Google Drive (or Docs). Use when the user gives an aniagotuje.pl recipe URL and wants it saved or converted to markdown.
 ---
 
 # Recipe to Markdown
@@ -43,6 +43,25 @@ These are the important transformations — follow them exactly:
   multiple groups and the same ingredient appears in more than one, merge them into a
   single line with the quantities added together (e.g. group A "200 g mąki" + group B
   "100 g mąki" → "300 g mąki"). Do not keep the group headings; produce one flat list.
+- **Split comma-separated spice/seasoning lists into one ingredient each.** When a single
+  line packs several seasonings together — e.g.
+  `przyprawy: płaska łyżeczka soli, po 1/4 łyżeczki gałki muszkatołowej oraz oregano, szczypta kurkumy`
+  — break it into separate ingredient lines, dropping the `przyprawy:` (or similar) label:
+  ```
+  płaska łyżeczka soli
+  1/4 łyżeczki gałki muszkatołowej
+  1/4 łyżeczki oregano
+  szczypta kurkumy
+  ```
+  Distribute a shared quantity introduced by `po` across each item it covers (`po 1/4
+  łyżeczki X oraz Y` → `1/4 łyżeczki X` and `1/4 łyżeczki Y`). Split on commas and on
+  `oraz`/`i` that join distinct seasonings. Do not invent quantities — if an item has none,
+  list it without one.
+- **Sum the times into a single "Czas".** Add `Czas przygotowania` and the cook time
+  (`Czas pieczenia` / `Czas smażenia` / `Czas gotowania`) together and present the total
+  under one `## Czas` header (e.g. 20 min prep + 45 min baking → `1 godz 5 min`). If only
+  one of the two times is given, use that single value. Use natural Polish units
+  (`min`, `godz`).
 - **Prefer weights.** When an ingredient gives a volume/loose measure (szklanka/cup,
   łyżka, etc.) and a weight is also available or derivable, use the weight in grams or
   kilograms. If only a loose measure is given, keep it as-is — do not guess a weight.
@@ -70,13 +89,9 @@ These are the important transformations — follow them exactly:
 
 <url>
 
-## Czas przygotowania
+## Czas
 
-<prep time>
-
-## Czas gotowania
-
-<cook time>
+<prep time + cook time, summed>
 
 ## Porcje
 
@@ -98,8 +113,7 @@ These are the important transformations — follow them exactly:
 ```
 
 Both ingredients and steps are raw, marker-free lines/paragraphs separated by blank
-lines. Use the actual cook-time label the page provides (`Czas pieczenia`,
-`Czas smażenia`, or `Czas gotowania`) as that header.
+lines. The `## Czas` value is the prep time and cook time summed into one total.
 
 ## Write the file
 

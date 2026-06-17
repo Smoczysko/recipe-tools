@@ -4,13 +4,9 @@
 
 https://aniagotuje.pl/przepis/ciasto-jogurtowe
 
-## Czas przygotowania
+## Czas
 
-20 minut
-
-## Czas pieczenia
-
-45 minut
+1 godz 5 min
 
 ## Porcje
 
